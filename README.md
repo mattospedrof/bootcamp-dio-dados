@@ -1,3 +1,3 @@
 # Sistema Bancário
 
-- Criação de um sistema de usuário único, com limitação de saque diário.
+- Criação de um sistema integrado a banco de dados MySQL.
