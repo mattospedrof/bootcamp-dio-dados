@@ -211,92 +211,93 @@ def extrato(cursor, user_id, nome_usuario):
     with connection.cursor() as cursor:
         opcao_extrato = input("\nDeseja ver o extrato de Dia (D) ou Período (P)? ").lower()[:1]
 
-        if opcao_extrato == 'd':
-            data_consulta = input("\nDigite a data no formato DD-MM-AAAA: ")[:10]
-            data_formatada = data_consulta
-            nome_arquivo_diario = f'extrato_{nome_usuario}_{data_consulta}.txt'
-            
-            try:
-                data_consulta = datetime.strptime(data_consulta, "%d-%m-%Y").strftime("%Y-%m-%d")
-            except ValueError:
-                print("Formato de data inválido. Use o formato DD-MM-AAAA.")
-                return
-        
-            query_diario = (
-                "SELECT data, movimentacao, valor, saldo "
-                "FROM info_conta "
-                "WHERE user_id = %s AND DATE(data) = %s "
-                "ORDER BY data "
-            )
-            cursor.execute(query_diario, ((user_id,), data_consulta))
-            extrato_data = cursor.fetchall()
-            
-            print("\nMovimento\t\tValor(R$)\tSaldo\t\tData e Horário\n")
-            for row in extrato_data:
-                print(f"{row['movimentacao']:<20}\t{row['valor']:<15}\t{row['saldo']:<15}\t{row['data']}\n")
-
-            salvar_extrato = input("\nDeseja salvar o extrato em um arquivo? (S/N) ").lower()[:1]
-            if salvar_extrato == 's':
-                with open(nome_arquivo_diario, 'w') as arquivo:
-                    arquivo.write(
-                                "Mattos Financeira\n"
-                                f"Usuário: {nome_usuario}\n"
-                                f"Agência: {AGENCIA}\n"
-                                f"Conta-Corrente: {numero_conta[:9]}-{numero_conta[9]}\n"
-                                f"\nExtrato do dia {data_formatada}\n"
-                                "\nMovimento\t\tValor(R$)\tSaldo(R$)\t\tData - Horário\n"
-                            )
-                    
-                    for row in extrato_data:
-                        arquivo.write(f"{row['movimentacao']:<20}\t{row['valor']:<15}\t{row['saldo']:<15}\t{row['data']}\n")
+        match opcao_extrato:
+            case 'd':
+                data_consulta = input("\nDigite a data no formato DD-MM-AAAA: ")[:10]
+                data_formatada = data_consulta
+                nome_arquivo_diario = f'extrato_{nome_usuario}_{data_consulta}.txt'
                 
-                print(f"\nExtrato salvo no arquivo {nome_arquivo_diario}")
+                try:
+                    data_consulta = datetime.strptime(data_consulta, "%d-%m-%Y").strftime("%Y-%m-%d")
+                except ValueError:
+                    print("Formato de data inválido. Use o formato DD-MM-AAAA.")
+                    return
             
-        elif opcao_extrato == 'p':
-            data_inicio = input("Digite a data de início no formato DD-MM-AAAA: ")[:10]
-            data_ini_format = data_inicio
-            data_fim = input("Digite a data de fim no formato DD-MM-AAAA: ")[:10]
-            data_fim_format = data_fim
-            nome_arquivo_periodo = f'extrato_{nome_usuario}_{data_inicio[:5]}/{data_fim[:5]}.txt'
-            
-            try:
-                data_inicio = datetime.strptime(data_inicio, "%d-%m-%Y").strftime("%Y-%m-%d")
-                data_fim = datetime.strptime(data_fim, "%d-%m-%Y").strftime("%Y-%m-%d")
-            except ValueError:
-                print("Formato de data inválido. Use o formato DD-MM-AAAA.")
+                query_diario = (
+                    "SELECT data, movimentacao, valor, saldo "
+                    "FROM info_conta "
+                    "WHERE user_id = %s AND DATE(data) = %s "
+                    "ORDER BY data "
+                )
+                cursor.execute(query_diario, ((user_id,), data_consulta))
+                extrato_data = cursor.fetchall()
+                
+                print("\nMovimento\t\tValor(R$)\tSaldo\t\tData e Horário\n")
+                for row in extrato_data:
+                    print(f"{row['movimentacao']:<20}\t{row['valor']:<15}\t{row['saldo']:<15}\t{row['data']}\n")
+
+                salvar_extrato = input("\nDeseja salvar o extrato em um arquivo? (S/N) ").lower()[:1]
+                if salvar_extrato == 's':
+                    with open(nome_arquivo_diario, 'w') as arquivo:
+                        arquivo.write(
+                                    "Mattos Financeira\n"
+                                    f"Usuário: {nome_usuario}\n"
+                                    f"Agência: {AGENCIA}\n"
+                                    f"Conta-Corrente: {numero_conta[:9]}-{numero_conta[9]}\n"
+                                    f"\nExtrato do dia {data_formatada}\n"
+                                    "\nMovimento\t\tValor(R$)\tSaldo(R$)\t\tData - Horário\n"
+                                )
+                        
+                        for row in extrato_data:
+                            arquivo.write(f"{row['movimentacao']:<20}\t{row['valor']:<15}\t{row['saldo']:<15}\t{row['data']}\n")
+                    
+                    print(f"\nExtrato salvo no arquivo {nome_arquivo_diario}")
+                
+            case 'p':
+                data_inicio = input("Digite a data de início no formato DD-MM-AAAA: ")[:10]
+                data_ini_format = data_inicio
+                data_fim = input("Digite a data de fim no formato DD-MM-AAAA: ")[:10]
+                data_fim_format = data_fim
+                nome_arquivo_periodo = f'extrato_{nome_usuario}_{data_inicio[:5]}/{data_fim[:5]}.txt'
+                
+                try:
+                    data_inicio = datetime.strptime(data_inicio, "%d-%m-%Y").strftime("%Y-%m-%d")
+                    data_fim = datetime.strptime(data_fim, "%d-%m-%Y").strftime("%Y-%m-%d")
+                except ValueError:
+                    print("Formato de data inválido. Use o formato DD-MM-AAAA.")
+                    return
+                
+                query_periodo = (
+                    "SELECT data, movimentacao, valor, saldo "
+                    "FROM info_conta "
+                    "WHERE user_id = %s AND DATE(data) BETWEEN %s AND %s "
+                    "ORDER BY data "
+                )
+                cursor.execute(query_periodo, (user_id, f"{data_inicio} 00:00:00", f"{data_fim} 23:59:59"))
+                extrato_data = cursor.fetchall()
+                
+                for row in extrato_data:
+                    print(f"{row['data']} \t {row['movimentacao']} \t {row['valor']} \t {row['saldo']}")
+
+                salvar_extrato = input("Deseja salvar o extrato em um arquivo? (S/N) ").lower()[:1]
+                if salvar_extrato == 's':
+                    with open(nome_arquivo_periodo, 'w') as arquivo:
+                        arquivo.write(
+                                    "Mattos Financeira\n"
+                                    f"Usuário: {nome_usuario}\n"
+                                    f"Agência: {AGENCIA}\n"
+                                    f"Conta-Corrente: {numero_conta[:9]}-{numero_conta[9]}\n"
+                                    f"\nExtrato do período: {data_ini_format} a {data_fim_format}\n"
+                                    "\nMovimento\t\tValor(R$)\tSaldo(R$)\t\tData - Horário\n"
+                                )
+                        
+                        for row in extrato_data:
+                            arquivo.write(f"{row['movimentacao']:<20}\t{row['valor']:<15}\t{row['saldo']:<15}\t{row['data']}\n")
+                    print(f"Extrato salvo no arquivo {nome_arquivo_periodo}")
+            case _:
+                print("Opção inválida.")
                 return
             
-            query_periodo = (
-                "SELECT data, movimentacao, valor, saldo "
-                "FROM info_conta "
-                "WHERE user_id = %s AND DATE(data) BETWEEN %s AND %s "
-                "ORDER BY data "
-            )
-            cursor.execute(query_periodo, (user_id, f"{data_inicio} 00:00:00", f"{data_fim} 23:59:59"))
-            extrato_data = cursor.fetchall()
-            
-            for row in extrato_data:
-                print(f"{row['data']} \t {row['movimentacao']} \t {row['valor']} \t {row['saldo']}")
-
-            salvar_extrato = input("Deseja salvar o extrato em um arquivo? (S/N) ").lower()[:1]
-            if salvar_extrato == 's':
-                with open(nome_arquivo_diario, 'w') as arquivo:
-                    arquivo.write(
-                                "Mattos Financeira\n"
-                                f"Usuário: {nome_usuario}\n"
-                                f"Agência: {AGENCIA}\n"
-                                f"Conta-Corrente: {numero_conta[:9]}-{numero_conta[9]}\n"
-                                f"\nExtrato do período: {data_ini_format} a {data_fim_format}\n"
-                                "\nMovimento\t\tValor(R$)\tSaldo(R$)\t\tData - Horário\n"
-                            )
-                    
-                    for row in extrato_data:
-                        arquivo.write(f"{row['movimentacao']:<20}\t{row['valor']:<15}\t{row['saldo']:<15}\t{row['data']}\n")
-                print(f"Extrato salvo no arquivo {nome_arquivo_periodo}")
-        else:
-            print("Opção inválida.")
-            return
-        
         connection.commit()
 
 def saldo(cursor, user_id):
@@ -384,7 +385,7 @@ while True:
             print(
                 "\nParabéns por confiar em nosso trabalho!!\n"
                 f"Sua agência é {AGENCIA}\n" 
-                f"CC:{numero_conta}\n"
+                f"Conta:{numero_conta[:9]}-{numero_conta[9]}\n"
             )
     
     elif opcao_entrada.upper() == 'B':
@@ -419,27 +420,28 @@ while True:
                             time.sleep(0.5)
                             opcao_usuario = input("\n=> ")[:1]
                             
-                            if opcao_usuario.lower() == 'd':
-                                deposito(cursor, user_id, numero_conta)
-                                connection.commit()
-                            
-                            elif opcao_usuario.lower() == 's':
-                                saque(cursor, user_id, numero_conta)
-                                connection.commit()
-                            
-                            elif opcao_usuario.lower() == 'e':
-                                extrato(cursor, user_id, nome_usuario)
+                            match opcao_usuario:
+                                case 'd':
+                                    deposito(cursor, user_id, numero_conta)
+                                    connection.commit()
                                 
-                            elif opcao_usuario.lower() == 't':
-                                saldo(cursor, user_id)
+                                case 's':
+                                    saque(cursor, user_id, numero_conta)
+                                    connection.commit()
                                 
-                            elif opcao_usuario.lower() == 'q':
-                                print("Saindo da conta...")
-                                time.sleep(1)
-                                break
-                            
-                            else:
-                                print("Digite uma opção válida!")
+                                case 'e':
+                                    extrato(cursor, user_id, nome_usuario)
+                                    
+                                case 't':
+                                    saldo(cursor, user_id)
+                                    
+                                case 'q':
+                                    print("Saindo da conta...")
+                                    time.sleep(1)
+                                    break
+                                
+                                case _:
+                                    print("Digite uma opção válida!")
                     
                     else:
                         print("Usuário ou senha inválidos.")
